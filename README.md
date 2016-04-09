@@ -143,8 +143,8 @@ int main(int ac, const char* av[]) {
 ```
 ## Program options
 
-```
-./showmixins -h
+```bash
+./mpool -h
 mpool, show information about transactions in memory pool:
   -h [ --help ] [=arg(=1)] (=0)         produce help message
   -a [ --address ] arg (=http:://127.0.0.1:18081)
