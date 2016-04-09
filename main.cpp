@@ -36,6 +36,8 @@ namespace epee {
 // member variable. I use modified daemon with few extra
 // bits and peaces here and there. One of them is
 // tx_blob in cryptonote::tx_info structure
+// thus I check if I run my version, or just
+// generic one like most ppl will.
 DEFINE_MEMBER_CHECKER(tx_blob);
 
 int main(int ac, const char* av[]) {
