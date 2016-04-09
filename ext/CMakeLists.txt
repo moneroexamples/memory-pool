@@ -9,7 +9,7 @@ set(SOURCE_HEADERS
 
 set(SOURCE_FILES
 		format.cc
-		dateparser.cpp)
+		dateparser.cpp member_checker.h)
 
 # make static library called libmyxrm
 # that we are going to link to

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PROJECT_NAME
-        xmr2csv)
+        mpool)
 
 project(${PROJECT_NAME})
 
@@ -41,6 +41,7 @@ include_directories(
         ${MONERO_HEADERS_DIR}/src
         ${MONERO_HEADERS_DIR}/external
         ${MONERO_HEADERS_DIR}/contrib/epee/include
+        ${MONERO_HEADERS_DIR}/contrib/epee/include/storages
         ${MONERO_HEADERS_DIR}/external/db_drivers/liblmdb)
 
 
