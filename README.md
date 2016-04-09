@@ -1,8 +1,6 @@
-# Export our transactions from blockchain into csv file
+# Show transactions in memory pool
 
-In this example, it is shown how to export our transactions from the blockchain
-(given our address and private viewkey) into a csv file. This can be very useful
-for making summaries or reports of our incoming and outgoing transactions.
+In this example, it is shown how to get transactions from the memory pool
 
 
 ## Prerequisites
@@ -15,13 +13,8 @@ Instruction for Monero compilation:
 The Monero C++ development environment was set as shown in the above link.
 
 
-
 ## C++ code
 The main part of the example is main.cpp.
-
-
-
-
 
 
 
@@ -32,10 +25,10 @@ steps can be executed:
 
 ```bash
 # download the source code
-git clone https://github.com/moneroexamples/transactions-export.git
+git clone https://github.com/moneroexamples/memory-pool.git
 
 # enter the downloaded sourced code folder
-cd transactions-export
+cd memory-pool
 
 # create the makefile
 cmake .
@@ -55,13 +48,3 @@ Some Monero are also welcome:
 ```
 48daf1rG3hE1Txapcsxh6WXNe9MLNKtu7W7tKTivtSoVLHErYzvdcpea2nSTgGkz66RFP4GKVAsTV14v6G3oddBTHfxP6tU
 ```
-
-
-
-
-
-
-
-
-
-
