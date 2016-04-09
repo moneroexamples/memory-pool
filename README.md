@@ -19,7 +19,6 @@ Obviously, running and synchronized Monero deamon/node is also required.
 The main part of the example is `main.cpp`.
 
 ```c++
-
 // define a checker to test if a structure has "tx_blob"
 // member variable. I use modified daemon with few extra
 // bits and peaces here and there. One of them is
@@ -45,10 +44,13 @@ int main(int ac, const char* av[]) {
     auto testnet_opt        = opts.get_option<bool>("testnet");
     auto detailed_opt       = opts.get_option<bool>("detailed");
 
-
+    // check if we have tx_blob member in tx_info structure
     bool HAVE_TX_BLOB {HAS_MEMBER(cryptonote::tx_info, tx_blob)};
 
 
+
+    // perform RPC call to deamon to get
+    // its transaction pull
     boost::mutex m_daemon_rpc_mutex;
 
     request req;
@@ -66,7 +68,7 @@ int main(int ac, const char* av[]) {
 
     if (!r)
     {
-        cerr << "Error connecting to Monero daeaomn at "
+        cerr << "Error connecting to Monero deamon at "
              << *daemon_address_opt << endl;
         return 1;
     }
@@ -75,6 +77,7 @@ int main(int ac, const char* av[]) {
          << res.transactions.size() << "\n" << endl;
 
 
+    // for each transaction in the memory pool
     for (size_t i = 0; i < res.transactions.size(); ++i)
     {
 
@@ -82,6 +85,7 @@ int main(int ac, const char* av[]) {
         cryptonote::tx_info _tx_info = res.transactions.at(i);
 
 
+        // display basic info
         print("Tx hash: {:s}\n", _tx_info.id_hash);
 
         print("Fee: {:0.8f} xmr, size {:d} bytes\n",
@@ -92,6 +96,9 @@ int main(int ac, const char* av[]) {
               xmreg::timestamp_to_str(_tx_info.receive_time));
 
 
+        // if we have tx blob disply more.
+        // this info can also be obtained from json that is
+        // normally returned by the RCP call (see below in detailed view)
         if (HAVE_TX_BLOB)
         {
             cryptonote::transaction tx;
