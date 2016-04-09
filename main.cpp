@@ -55,7 +55,7 @@ int main(int ac, const char* av[]) {
 
     auto daemon_address_opt = opts.get_option<string>("address");
     auto testnet_opt        = opts.get_option<bool>("testnet");
-
+    auto detailed_opt       = opts.get_option<bool>("detailed");
 
 
     bool HAVE_TX_BLOB {HAS_MEMBER(cryptonote::tx_info, tx_blob)};
@@ -78,7 +78,8 @@ int main(int ac, const char* av[]) {
 
     if (!r)
     {
-        cerr << "Error connectining to daeaomn" << endl;
+        cerr << "Error connecting to Monero daeaomn at "
+             << *daemon_address_opt << endl;
         return 1;
     }
 
@@ -86,27 +87,21 @@ int main(int ac, const char* av[]) {
          << res.transactions.size() << "\n" << endl;
 
 
-    for (const cryptonote::tx_info& _tx_info: res.transactions)
+    for (size_t i = 0; i < res.transactions.size(); ++i)
     {
 
-        rapidjson::Document json;
+        // get transaction info of the tx in the mempool
+        cryptonote::tx_info _tx_info = res.transactions.at(i);
 
-        if (json.Parse(_tx_info.tx_json.c_str()).HasParseError())
-        {
-            cerr << ("Failed to parse JSON") << endl;
-            continue;
-        }
 
-        cout << "tx hash (id): " << _tx_info.id_hash << std::endl
-             << "blob_size: " << _tx_info.blob_size << std::endl
-             << "fee: " << cryptonote::print_money(_tx_info.fee) << std::endl
-             << "receive_time: " << xmreg::timestamp_to_str(_tx_info.receive_time) << std::endl
-             << "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
-             << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
-             << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
-             << "last_failed_height: " << _tx_info.last_failed_height << std::endl
-             << "last_failed_id: " << _tx_info.last_failed_id_hash
-             << std::endl;
+        print("Tx hash: {:s}\n", _tx_info.id_hash);
+
+        print("Fee: {:0.8f} xmr, size {:d} bytes\n",
+              static_cast<double>(_tx_info.fee) / 1e12,
+              _tx_info.blob_size);
+
+        print("Receive time: {:s}\n",
+              xmreg::timestamp_to_str(_tx_info.receive_time));
 
 
         if (HAVE_TX_BLOB)
@@ -128,6 +123,18 @@ int main(int ac, const char* av[]) {
                   tx.vin.size(),
                   xmreg::get_mixin_no(tx),
                   static_cast<double>(xmreg::sum_money_in_inputs(tx)) / 1e12);
+        }
+
+
+        if (*detailed_opt)
+        {
+            cout<< "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
+                << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
+                << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
+                << "last_failed_height: " << _tx_info.last_failed_height << std::endl
+                << "last_failed_id: " << _tx_info.last_failed_id_hash
+                << "json: " << _tx_info.tx_json
+                << std::endl;
         }
 
         cout << endl;

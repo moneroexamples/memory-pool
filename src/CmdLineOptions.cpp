@@ -16,13 +16,15 @@ namespace xmreg
         positional_options_description p;
 
         options_description desc(
-                "xmr2csv, export all your transactions into csv file");
+                "mpool, show information about transactions in memory pool");
 
         desc.add_options()
                 ("help,h", value<bool>()->default_value(false)->implicit_value(true),
                  "produce help message")
                 ("address,a", value<string>()->default_value("http:://127.0.0.1:18081"),
                  "monero daemon address")
+                ("detailed,d",  value<bool>()->default_value(false)->implicit_value(true),
+                 "show more detailed info about transatcions")
                 ("testnet",  value<bool>()->default_value(false)->implicit_value(true),
                  "is the address from testnet network");
 
