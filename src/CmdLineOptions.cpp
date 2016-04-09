@@ -21,20 +21,8 @@ namespace xmreg
         desc.add_options()
                 ("help,h", value<bool>()->default_value(false)->implicit_value(true),
                  "produce help message")
-                ("address,a", value<string>(),
-                 "monero address string")
-                ("viewkey,v", value<string>(),
-                 "private view key string")
-                ("spendkey,s", value<string>(),
-                 "private spend key string")
-                ("start-height,t", value<size_t>(),
-                 "start from given height")
-                ("start-date,d", value<string>(),
-                 "start roughly from given date: yyyy-mm-dd")
-                ("out-csv-file,c", value<string>(),
-                 "private view key string")
-                ("bc-path,b", value<string>(),
-                 "path to lmdb blockchain")
+                ("address,a", value<string>()->default_value("http:://127.0.0.1:18081"),
+                 "monero daemon address")
                 ("testnet",  value<bool>()->default_value(false)->implicit_value(true),
                  "is the address from testnet network");
 

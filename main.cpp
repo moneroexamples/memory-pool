@@ -53,6 +53,11 @@ int main(int ac, const char* av[]) {
         return 0;
     }
 
+    auto daemon_address_opt = opts.get_option<string>("address");
+    auto testnet_opt        = opts.get_option<bool>("testnet");
+
+
+
     bool HAVE_TX_BLOB {HAS_MEMBER(cryptonote::tx_info, tx_blob)};
 
 
@@ -66,7 +71,7 @@ int main(int ac, const char* av[]) {
     m_daemon_rpc_mutex.lock();
 
     bool r = epee::net_utils::invoke_http_json_remote_command2(
-              string("http:://127.0.0.1:18081") + "/get_transaction_pool",
+              *daemon_address_opt + "/get_transaction_pool",
               req, res, m_http_client, 200000);
 
     m_daemon_rpc_mutex.unlock();
@@ -77,8 +82,9 @@ int main(int ac, const char* av[]) {
         return 1;
     }
 
+    cout << "No of transactions in memory pool: "
+         << res.transactions.size() << "\n" << endl;
 
-    cout << res.transactions.size() << endl;
 
     for (const cryptonote::tx_info& _tx_info: res.transactions)
     {
@@ -91,18 +97,16 @@ int main(int ac, const char* av[]) {
             continue;
         }
 
-
-        cout << "id: " << _tx_info.id_hash << std::endl
-             << _tx_info.tx_json << std::endl
+        cout << "tx hash (id): " << _tx_info.id_hash << std::endl
              << "blob_size: " << _tx_info.blob_size << std::endl
              << "fee: " << cryptonote::print_money(_tx_info.fee) << std::endl
-             << "receive_time: " << _tx_info.receive_time << std::endl
+             << "receive_time: " << xmreg::timestamp_to_str(_tx_info.receive_time) << std::endl
              << "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
              << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
              << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
              << "last_failed_height: " << _tx_info.last_failed_height << std::endl
-             << "last_failed_id: " << _tx_info.last_failed_id_hash << std::endl
-             << /*"tx_blob:"  << _tx_info.tx_blob << */ endl;
+             << "last_failed_id: " << _tx_info.last_failed_id_hash
+             << std::endl;
 
 
         if (HAVE_TX_BLOB)
@@ -113,10 +117,20 @@ int main(int ac, const char* av[]) {
                     _tx_info.tx_blob, tx))
             {
                 cerr << "Cant parse tx from blob" << endl;
+                continue;
             }
 
-            cout << tx.vin.size() << endl;
+            print("No of outputs {:d} for total {:0.8f} xmr\n",
+                  tx.vout.size(),
+                  static_cast<double>(xmreg::sum_money_in_outputs(tx)) / 1e12);
+
+            print("No of inputs {:d} (mixin {:d}) for total {:0.8f} xmr\n",
+                  tx.vin.size(),
+                  xmreg::get_mixin_no(tx),
+                  static_cast<double>(xmreg::sum_money_in_inputs(tx)) / 1e12);
         }
+
+        cout << endl;
 
     }
 
