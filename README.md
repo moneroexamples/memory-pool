@@ -1,8 +1,7 @@
 # Show transactions in memory pool
 
-In this example, it is shown how to query monero daemon usint RPC call
-to get transactions in memory pool.
-
+In this example, it is shown how to query Monero daemon using RPC call
+to get transactions in memory pool, and to display their details.
 
 ## Prerequisites
 
@@ -17,9 +16,16 @@ Obviously, running and synchronized Monero deamon/node is also required.
 
 
 ## C++ code
-The main part of the example is main.cpp.
+The main part of the example is `main.cpp`.
 
 ```c++
+
+// define a checker to test if a structure has "tx_blob"
+// member variable. I used modified daemon with few extra
+// bits and peaces here and there. One of them is
+// tx_blob in cryptonote::tx_info structure
+DEFINE_MEMBER_CHECKER(tx_blob);
+
 int main(int ac, const char* av[]) {
 
     // get command line options
