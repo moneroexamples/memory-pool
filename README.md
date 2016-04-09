@@ -21,7 +21,7 @@ The main part of the example is `main.cpp`.
 ```c++
 
 // define a checker to test if a structure has "tx_blob"
-// member variable. I used modified daemon with few extra
+// member variable. I use modified daemon with few extra
 // bits and peaces here and there. One of them is
 // tx_blob in cryptonote::tx_info structure
 DEFINE_MEMBER_CHECKER(tx_blob);
