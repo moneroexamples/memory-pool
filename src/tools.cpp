@@ -334,7 +334,7 @@ namespace xmreg
             }
 
             // get tx input key
-            const cryptonote::txin_to_key& tx_in_to_key
+            const txin_to_key& tx_in_to_key
                     = boost::get<cryptonote::txin_to_key>(tx.vin[i]);
 
             mixin_no = tx_in_to_key.key_offsets.size();
@@ -348,6 +348,33 @@ namespace xmreg
         }
 
         return mixin_no;
+    }
+
+
+    vector<txin_to_key>
+    get_key_images(const transaction& tx)
+    {
+        vector<txin_to_key> key_images;
+
+        size_t input_no = tx.vin.size();
+
+        for (size_t i = 0; i < input_no; ++i)
+        {
+
+            if(tx.vin[i].type() != typeid(txin_to_key))
+            {
+                continue;
+            }
+
+            // get tx input key
+            const txin_to_key& tx_in_to_key
+                    = boost::get<cryptonote::txin_to_key>(tx.vin[i]);
+
+            key_images.push_back(tx_in_to_key);
+        }
+
+        return key_images;
+
     }
 
 

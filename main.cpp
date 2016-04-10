@@ -131,6 +131,36 @@ int main(int ac, const char* av[]) {
                   tx.vin.size(),
                   xmreg::get_mixin_no(tx),
                   static_cast<double>(xmreg::sum_money_in_inputs(tx)) / 1e12);
+
+            // get key images
+            vector<cryptonote::txin_to_key> key_imgs
+                    = xmreg::get_key_images(tx);
+
+            print("Input key images:\n");
+            for (const cryptonote::txin_to_key& kimg: key_imgs)
+            {
+                print(" - {:s}, {:0.8f} xmr\n", kimg.k_image,
+                      static_cast<double>(kimg.amount) / 1e12);
+            }
+        }
+
+        // print key_images also returned from RPC call
+
+        if (!res.spent_key_images.empty())
+        {
+            size_t key_imgs_no = res.spent_key_images.size();
+
+            for (size_t ki = 0; ki < key_imgs_no; ++ki)
+            {
+                cryptonote::spent_key_image_info kinfo
+                        = res.spent_key_images.at(ki);
+
+                cout << "key image value: " << kinfo.id_hash << endl;
+                for (const string& tx_hash: kinfo.txs_hashes)
+                {
+                    print(" - tx hash: {:s}\n", tx_hash);
+                }
+            }
         }
 
 

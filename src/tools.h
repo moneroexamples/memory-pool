@@ -89,6 +89,9 @@ namespace xmreg
     uint64_t
     get_mixin_no(const transaction& tx);
 
+    vector<txin_to_key>
+    get_key_images(const transaction& tx);
+
 
     inline void
     enable_monero_log() {
