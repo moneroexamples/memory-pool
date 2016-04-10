@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#define XMR_AMOUNT(value) \
+    static_cast<double>(value) / 1e12
 
 /**
  * Some helper functions used in the example.
@@ -88,6 +90,10 @@ namespace xmreg
 
     uint64_t
     get_mixin_no(const transaction& tx);
+
+
+    vector<pair<txout_to_key, uint64_t>>
+    get_ouputs(const transaction& tx);
 
     vector<txin_to_key>
     get_key_images(const transaction& tx);

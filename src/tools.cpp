@@ -318,6 +318,30 @@ namespace xmreg
         return sum_xmr;
     }
 
+    vector<pair<txout_to_key, uint64_t>>
+    get_ouputs(const transaction& tx)
+    {
+        vector<pair<txout_to_key, uint64_t>> outputs;
+
+        for (const tx_out& txout: tx.vout)
+        {
+            if (txout.target.type() != typeid(txout_to_key))
+            {
+                continue;
+            }
+
+            // get tx input key
+            const txout_to_key& txout_key
+                    = boost::get<cryptonote::txout_to_key>(txout.target);
+
+            outputs.push_back(make_pair(txout_key, txout.amount));
+        }
+
+        return outputs;
+
+
+    };
+
     uint64_t
     get_mixin_no(const transaction& tx)
     {
@@ -374,7 +398,6 @@ namespace xmreg
         }
 
         return key_images;
-
     }
 
 

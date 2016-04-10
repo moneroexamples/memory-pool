@@ -60,8 +60,6 @@ int main(int ac, const char* av[]) {
     // check if we have tx_blob member in tx_info structure
     bool HAVE_TX_BLOB {HAS_MEMBER(cryptonote::tx_info, tx_blob)};
 
-
-
     // perform RPC call to deamon to get
     // its transaction pull
     boost::mutex m_daemon_rpc_mutex;
@@ -102,7 +100,7 @@ int main(int ac, const char* av[]) {
         print("Tx hash: {:s}\n", _tx_info.id_hash);
 
         print("Fee: {:0.8f} xmr, size {:d} bytes\n",
-              static_cast<double>(_tx_info.fee) / 1e12,
+               XMR_AMOUNT(_tx_info.fee),
               _tx_info.blob_size);
 
         print("Receive time: {:s}\n",
@@ -123,46 +121,112 @@ int main(int ac, const char* av[]) {
                 continue;
             }
 
-            print("No of outputs {:d} for total {:0.8f} xmr\n",
-                  tx.vout.size(),
-                  static_cast<double>(xmreg::sum_money_in_outputs(tx)) / 1e12);
-
             print("No of inputs {:d} (mixin {:d}) for total {:0.8f} xmr\n",
                   tx.vin.size(),
                   xmreg::get_mixin_no(tx),
-                  static_cast<double>(xmreg::sum_money_in_inputs(tx)) / 1e12);
+                  XMR_AMOUNT(xmreg::sum_money_in_inputs(tx)));
 
             // get key images
             vector<cryptonote::txin_to_key> key_imgs
                     = xmreg::get_key_images(tx);
 
             print("Input key images:\n");
-            for (const cryptonote::txin_to_key& kimg: key_imgs)
+
+            for (const auto& kimg: key_imgs)
             {
-                print(" - {:s}, {:0.8f} xmr\n", kimg.k_image,
-                      static_cast<double>(kimg.amount) / 1e12);
+                print(" - {:s}, {:0.8f} xmr\n",
+                      kimg.k_image,
+                      XMR_AMOUNT(kimg.amount));
             }
-        }
 
-        // print key_images also returned from RPC call
+            print("No of outputs {:d} for total {:0.8f} xmr\n",
+                  tx.vout.size(),
+                  XMR_AMOUNT(xmreg::sum_money_in_outputs(tx)));
 
-        if (!res.spent_key_images.empty())
-        {
-            size_t key_imgs_no = res.spent_key_images.size();
+            // get outputs
+            vector<pair<cryptonote::txout_to_key, uint64_t>> outputs =
+                    xmreg::get_ouputs(tx);
 
-            for (size_t ki = 0; ki < key_imgs_no; ++ki)
+            print("Outputs:\n");
+
+            for (const auto& txout: outputs)
             {
-                cryptonote::spent_key_image_info kinfo
-                        = res.spent_key_images.at(ki);
+                print(" - {:s}, {:0.8f} xmr\n",
+                      txout.first.key,
+                      XMR_AMOUNT(txout.second));
+            }
 
-                cout << "key image value: " << kinfo.id_hash << endl;
-                for (const string& tx_hash: kinfo.txs_hashes)
+        }
+        else
+        {
+            // if dont have tx_block, then just use json of tx
+            // to get the details.
+
+            rapidjson::Document json;
+
+            if (json.Parse(_tx_info.tx_json.c_str()).HasParseError())
+            {
+                cerr << "Failed to parse JSON" << endl;
+                continue;
+            }
+
+            // get information about inputs
+            const rapidjson::Value& vin = json["vin"];
+
+            if (vin.IsArray())
+            {
+                print("Input key images:\n");
+
+                for (rapidjson::SizeType i = 0; i < vin.Size(); ++i)
                 {
-                    print(" - tx hash: {:s}\n", tx_hash);
+                    if (vin[i].HasMember("key"))
+                    {
+                        const rapidjson::Value& key_img = vin[i]["key"];
+
+                        print(" - {:s}, {:0.8f} xmr\n",
+                              key_img["k_image"].GetString(),
+                              XMR_AMOUNT(key_img["amount"].GetUint64()));
+                    }
+                }
+            }
+
+            // get information about outputs
+            const rapidjson::Value& vout = json["vout"];
+
+            if (vout.IsArray())
+            {
+                print("Outputs:\n");
+
+                for (rapidjson::SizeType i = 0; i < vout.Size(); ++i)
+                {
+                    print(" - {:s}, {:0.8f} xmr\n",
+                          vout[i]["target"]["key"].GetString(),
+                          XMR_AMOUNT(vout[i]["amount"].GetUint64()));
+                }
+            }
+
+            cout << endl;
+
+            // key images are also returned by RPC call
+            // so just for the sake of the example, we print them
+            // as well
+            if (!res.spent_key_images.empty())
+            {
+                size_t key_imgs_no = res.spent_key_images.size();
+
+                for (size_t ki = 0; ki < key_imgs_no; ++ki)
+                {
+                    cryptonote::spent_key_image_info kinfo
+                            = res.spent_key_images.at(ki);
+
+                    cout << "key image value: " << kinfo.id_hash << endl;
+                    for (const string& tx_hash: kinfo.txs_hashes)
+                    {
+                        print(" - tx hash: {:s}\n", tx_hash);
+                    }
                 }
             }
         }
-
 
         if (*detailed_opt)
         {
@@ -170,7 +234,7 @@ int main(int ac, const char* av[]) {
                 << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
                 << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
                 << "last_failed_height: " << _tx_info.last_failed_height << std::endl
-                << "last_failed_id: " << _tx_info.last_failed_id_hash
+                << "last_failed_id: " << _tx_info.last_failed_id_hash << endl
                 << "json: " << _tx_info.tx_json
                 << std::endl;
         }
