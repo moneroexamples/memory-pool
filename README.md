@@ -292,7 +292,7 @@ mpool, show information about transactions in memory pool:
 Default output with just one transaction in the mempool.
 ```bash
 ./mpool
-No of transactions in memory pool: 1
+Number of transactions in memory pool: 1
 
 Tx hash: 3d32acc7359c1fd8ac585f927582d0e4f5a0ce97733da3f2cfcabe11b28912e1
 Fee: 0.0100000000 xmr, size 459 bytes
@@ -314,7 +314,7 @@ Outputs:
 Default output with more than one transactions in mempool.
 ```bash
 ./mpool
-No of transactions in memory pool: 2
+Number of transactions in memory pool: 2
 
 Tx hash: 3d32acc7359c1fd8ac585f927582d0e4f5a0ce97733da3f2cfcabe11b28912e1
 Fee: 0.0100000000 xmr, size 459 bytes
@@ -370,7 +370,7 @@ Outputs:
 Detailed output with more than one transactions in mempool.
 ```bash
 ./mpool -d
-No of transactions in memory pool: 3
+Number of transactions in memory pool: 3
 
 Tx hash: 142aec28ff8020131b738bcc3d60c73baa6a4287269499855b7f92dd15ebf2f1
 Fee: 0.1000000000 xmr, size 586 bytes
