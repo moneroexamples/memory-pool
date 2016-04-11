@@ -76,9 +76,8 @@ int main(int ac, const char* av[]) {
         return 1;
     }
 
-    cout << "No of transactions in memory pool: "
-         << res.transactions.size() << "\n" << endl;
-
+    print("Number of transactions in memory pool: {:d}\n",
+          res.transactions.size());
 
     // for each transaction in the memory pool
     for (size_t i = 0; i < res.transactions.size(); ++i)
