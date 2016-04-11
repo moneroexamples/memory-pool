@@ -24,8 +24,13 @@ The main part of the example is `main.cpp`.
 // bits and peaces here and there. One of them is
 // tx_blob in cryptonote::tx_info structure
 // thus I check if I run my version, or just
-// generic one like most ppl will.
+// generic one
 DEFINE_MEMBER_CHECKER(tx_blob);
+
+// define getter to get tx_blob, i.e., get_tx_blob function
+// as string if exists. the getter return empty string if
+// tx_blob does not exist
+DEFINE_MEMBER_GETTER(tx_blob, string);
 
 int main(int ac, const char* av[]) {
 
@@ -78,15 +83,13 @@ int main(int ac, const char* av[]) {
     // for each transaction in the memory pool
     for (size_t i = 0; i < res.transactions.size(); ++i)
     {
-
         // get transaction info of the tx in the mempool
         cryptonote::tx_info _tx_info = res.transactions.at(i);
-
 
         // display basic info
         print("Tx hash: {:s}\n", _tx_info.id_hash);
 
-        print("Fee: {:0.8f} xmr, size {:d} bytes\n",
+        print("Fee: {:0.10f} xmr, size {:d} bytes\n",
                XMR_AMOUNT(_tx_info.fee),
               _tx_info.blob_size);
 
@@ -99,16 +102,25 @@ int main(int ac, const char* av[]) {
         // normally returned by the RCP call (see below in detailed view)
         if (HAVE_TX_BLOB)
         {
+            // get tx_blob if exists
+            string tx_blob = get_tx_blob(_tx_info);
+
+            if (tx_blob.empty())
+            {
+                cerr << "tx_blob is empty. Probably its not a custom deamon." << endl;
+                continue;
+            }
+
             cryptonote::transaction tx;
 
             if (!cryptonote::parse_and_validate_tx_from_blob(
-                    _tx_info.tx_blob, tx))
+                    tx_blob, tx))
             {
                 cerr << "Cant parse tx from blob" << endl;
                 continue;
             }
 
-            print("No of inputs {:d} (mixin {:d}) for total {:0.8f} xmr\n",
+            print("No of inputs {:d} (mixin {:d}) for total {:0.10f} xmr\n",
                   tx.vin.size(),
                   xmreg::get_mixin_no(tx),
                   XMR_AMOUNT(xmreg::sum_money_in_inputs(tx)));
@@ -126,7 +138,7 @@ int main(int ac, const char* av[]) {
                       XMR_AMOUNT(kimg.amount));
             }
 
-            print("No of outputs {:d} for total {:0.8f} xmr\n",
+            print("No of outputs {:d} for total {:0.10f} xmr\n",
                   tx.vout.size(),
                   XMR_AMOUNT(xmreg::sum_money_in_outputs(tx)));
 
@@ -138,7 +150,7 @@ int main(int ac, const char* av[]) {
 
             for (const auto& txout: outputs)
             {
-                print(" - {:s}, {:0.8f} xmr\n",
+                print(" - {:s}, {:0.10f} xmr\n",
                       txout.first.key,
                       XMR_AMOUNT(txout.second));
             }
@@ -160,19 +172,34 @@ int main(int ac, const char* av[]) {
             // get information about inputs
             const rapidjson::Value& vin = json["vin"];
 
+
             if (vin.IsArray())
             {
+                // get total xmr in inputs
+                uint64_t total_xml {0};
+
+                for (rapidjson::SizeType i = 0; i < vin.Size(); ++i)
+                {
+                    if (vin[i].HasMember("key"))
+                    {
+                        total_xml +=  vin[i]["key"]["amount"].GetUint64();
+                    }
+                }
+
+                print("No of inputs {:d} (mixin {:d}) for total {:0.10f} xmr\n",
+                      vin.Size(), vin[0]["key"]["key_offsets"].Size(),
+                      XMR_AMOUNT(total_xml));
+
+                // print out individual key images
                 print("Input key images:\n");
 
                 for (rapidjson::SizeType i = 0; i < vin.Size(); ++i)
                 {
                     if (vin[i].HasMember("key"))
                     {
-                        const rapidjson::Value& key_img = vin[i]["key"];
-
-                        print(" - {:s}, {:0.8f} xmr\n",
-                              key_img["k_image"].GetString(),
-                              XMR_AMOUNT(key_img["amount"].GetUint64()));
+                         print(" - {:s}, {:0.10f} xmr\n",
+                              vin[i]["key"]["k_image"].GetString(),
+                              XMR_AMOUNT(vin[i]["key"]["amount"].GetUint64()));
                     }
                 }
             }
@@ -182,17 +209,42 @@ int main(int ac, const char* av[]) {
 
             if (vout.IsArray())
             {
+
+                // get total xmr in outputs
+                uint64_t total_xml {0};
+
+                for (rapidjson::SizeType i = 0; i < vout.Size(); ++i)
+                {
+                        total_xml +=  vout[i]["amount"].GetUint64();
+                }
+
+                print("No of outputs {:d} for total {:0.10f} xmr\n",
+                      vout.Size(), XMR_AMOUNT(total_xml));
+
+                // print out individual output public keys
                 print("Outputs:\n");
 
                 for (rapidjson::SizeType i = 0; i < vout.Size(); ++i)
                 {
-                    print(" - {:s}, {:0.8f} xmr\n",
+                    print(" - {:s}, {:0.10f} xmr\n",
                           vout[i]["target"]["key"].GetString(),
                           XMR_AMOUNT(vout[i]["amount"].GetUint64()));
                 }
             }
 
             cout << endl;
+
+        } // else if (HAVE_TX_BLOB)
+
+        if (*detailed_opt)
+        {
+            cout<< "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
+                << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
+                << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
+                << "last_failed_height: " << _tx_info.last_failed_height << std::endl
+                << "last_failed_id: " << _tx_info.last_failed_id_hash << endl
+                << "json: " << _tx_info.tx_json
+                << std::endl;
 
             // key images are also returned by RPC call
             // so just for the sake of the example, we print them
@@ -213,18 +265,7 @@ int main(int ac, const char* av[]) {
                     }
                 }
             }
-        }
-
-        if (*detailed_opt)
-        {
-            cout<< "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
-                << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
-                << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
-                << "last_failed_height: " << _tx_info.last_failed_height << std::endl
-                << "last_failed_id: " << _tx_info.last_failed_id_hash << endl
-                << "json: " << _tx_info.tx_json
-                << std::endl;
-        }
+        } // if (*detailed_opt)
 
         cout << endl;
 
