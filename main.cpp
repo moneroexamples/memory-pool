@@ -26,7 +26,6 @@ using namespace std;
 // without this it wont work. I'm not sure what it does.
 // it has something to do with locking the blockchain and tx pool
 // during certain operations to avoid deadlocks.
-
 namespace epee {
     unsigned int g_test_dbg_lock_sleep = 0;
 }
@@ -36,7 +35,7 @@ namespace epee {
 // bits and peaces here and there. One of them is
 // tx_blob in cryptonote::tx_info structure
 // thus I check if I run my version, or just
-// generic one like most ppl will.
+// generic one
 DEFINE_MEMBER_CHECKER(tx_blob);
 
 // define getter to get tx_blob, i.e., get_tx_blob function
@@ -101,7 +100,7 @@ int main(int ac, const char* av[]) {
         // display basic info
         print("Tx hash: {:s}\n", _tx_info.id_hash);
 
-        print("Fee: {:0.8f} xmr, size {:d} bytes\n",
+        print("Fee: {:0.10f} xmr, size {:d} bytes\n",
                XMR_AMOUNT(_tx_info.fee),
               _tx_info.blob_size);
 
@@ -132,7 +131,7 @@ int main(int ac, const char* av[]) {
                 continue;
             }
 
-            print("No of inputs {:d} (mixin {:d}) for total {:0.8f} xmr\n",
+            print("No of inputs {:d} (mixin {:d}) for total {:0.10f} xmr\n",
                   tx.vin.size(),
                   xmreg::get_mixin_no(tx),
                   XMR_AMOUNT(xmreg::sum_money_in_inputs(tx)));
@@ -150,7 +149,7 @@ int main(int ac, const char* av[]) {
                       XMR_AMOUNT(kimg.amount));
             }
 
-            print("No of outputs {:d} for total {:0.8f} xmr\n",
+            print("No of outputs {:d} for total {:0.10f} xmr\n",
                   tx.vout.size(),
                   XMR_AMOUNT(xmreg::sum_money_in_outputs(tx)));
 
@@ -162,7 +161,7 @@ int main(int ac, const char* av[]) {
 
             for (const auto& txout: outputs)
             {
-                print(" - {:s}, {:0.8f} xmr\n",
+                print(" - {:s}, {:0.10f} xmr\n",
                       txout.first.key,
                       XMR_AMOUNT(txout.second));
             }
@@ -184,19 +183,34 @@ int main(int ac, const char* av[]) {
             // get information about inputs
             const rapidjson::Value& vin = json["vin"];
 
+
             if (vin.IsArray())
             {
+                // get total xmr in inputs
+                uint64_t total_xml {0};
+
+                for (rapidjson::SizeType i = 0; i < vin.Size(); ++i)
+                {
+                    if (vin[i].HasMember("key"))
+                    {
+                        total_xml +=  vin[i]["key"]["amount"].GetUint64();
+                    }
+                }
+
+                print("No of inputs {:d} (mixin {:d}) for total {:0.10f} xmr\n",
+                      vin.Size(), vin[0]["key"]["key_offsets"].Size(),
+                      XMR_AMOUNT(total_xml));
+
+                // print out individual key images
                 print("Input key images:\n");
 
                 for (rapidjson::SizeType i = 0; i < vin.Size(); ++i)
                 {
                     if (vin[i].HasMember("key"))
                     {
-                        const rapidjson::Value& key_img = vin[i]["key"];
-
-                        print(" - {:s}, {:0.8f} xmr\n",
-                              key_img["k_image"].GetString(),
-                              XMR_AMOUNT(key_img["amount"].GetUint64()));
+                         print(" - {:s}, {:0.10f} xmr\n",
+                              vin[i]["key"]["k_image"].GetString(),
+                              XMR_AMOUNT(vin[i]["key"]["amount"].GetUint64()));
                     }
                 }
             }
@@ -206,11 +220,24 @@ int main(int ac, const char* av[]) {
 
             if (vout.IsArray())
             {
+
+                // get total xmr in outputs
+                uint64_t total_xml {0};
+
+                for (rapidjson::SizeType i = 0; i < vout.Size(); ++i)
+                {
+                        total_xml +=  vout[i]["amount"].GetUint64();
+                }
+
+                print("No of outputs {:d} for total {:0.10f} xmr\n",
+                      vout.Size(), XMR_AMOUNT(total_xml));
+
+                // print out individual output public keys
                 print("Outputs:\n");
 
                 for (rapidjson::SizeType i = 0; i < vout.Size(); ++i)
                 {
-                    print(" - {:s}, {:0.8f} xmr\n",
+                    print(" - {:s}, {:0.10f} xmr\n",
                           vout[i]["target"]["key"].GetString(),
                           XMR_AMOUNT(vout[i]["amount"].GetUint64()));
                 }
@@ -218,7 +245,7 @@ int main(int ac, const char* av[]) {
 
             cout << endl;
 
-        }
+        } // else if (HAVE_TX_BLOB)
 
         if (*detailed_opt)
         {
@@ -249,9 +276,7 @@ int main(int ac, const char* av[]) {
                     }
                 }
             }
-
-
-        }
+        } // if (*detailed_opt)
 
         cout << endl;
 
