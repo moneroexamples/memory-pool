@@ -31,7 +31,6 @@ namespace epee {
     unsigned int g_test_dbg_lock_sleep = 0;
 }
 
-
 // define a checker to test if a structure has "tx_blob"
 // member variable. I use modified daemon with few extra
 // bits and peaces here and there. One of them is
@@ -39,6 +38,11 @@ namespace epee {
 // thus I check if I run my version, or just
 // generic one like most ppl will.
 DEFINE_MEMBER_CHECKER(tx_blob);
+
+// define getter to get tx_blob, i.e., get_tx_blob function
+// as string if exists. the getter return empty string if
+// tx_blob does not exist
+DEFINE_MEMBER_GETTER(tx_blob, string);
 
 int main(int ac, const char* av[]) {
 
@@ -91,10 +95,8 @@ int main(int ac, const char* av[]) {
     // for each transaction in the memory pool
     for (size_t i = 0; i < res.transactions.size(); ++i)
     {
-
         // get transaction info of the tx in the mempool
         cryptonote::tx_info _tx_info = res.transactions.at(i);
-
 
         // display basic info
         print("Tx hash: {:s}\n", _tx_info.id_hash);
@@ -112,10 +114,19 @@ int main(int ac, const char* av[]) {
         // normally returned by the RCP call (see below in detailed view)
         if (HAVE_TX_BLOB)
         {
+            // get tx_blob if exists
+            string tx_blob = get_tx_blob(_tx_info);
+
+            if (tx_blob.empty())
+            {
+                cerr << "tx_blob is empty. Probably its not a custom deamon." << endl;
+                continue;
+            }
+
             cryptonote::transaction tx;
 
             if (!cryptonote::parse_and_validate_tx_from_blob(
-                    _tx_info.tx_blob, tx))
+                    tx_blob, tx))
             {
                 cerr << "Cant parse tx from blob" << endl;
                 continue;
@@ -207,6 +218,18 @@ int main(int ac, const char* av[]) {
 
             cout << endl;
 
+        }
+
+        if (*detailed_opt)
+        {
+            cout<< "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
+                << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
+                << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
+                << "last_failed_height: " << _tx_info.last_failed_height << std::endl
+                << "last_failed_id: " << _tx_info.last_failed_id_hash << endl
+                << "json: " << _tx_info.tx_json
+                << std::endl;
+
             // key images are also returned by RPC call
             // so just for the sake of the example, we print them
             // as well
@@ -226,17 +249,8 @@ int main(int ac, const char* av[]) {
                     }
                 }
             }
-        }
 
-        if (*detailed_opt)
-        {
-            cout<< "kept_by_block: " << (_tx_info.kept_by_block ? 'T' : 'F') << std::endl
-                << "max_used_block_height: " << _tx_info.max_used_block_height << std::endl
-                << "max_used_block_id: " << _tx_info.max_used_block_id_hash << std::endl
-                << "last_failed_height: " << _tx_info.last_failed_height << std::endl
-                << "last_failed_id: " << _tx_info.last_failed_id_hash << endl
-                << "json: " << _tx_info.tx_json
-                << std::endl;
+
         }
 
         cout << endl;
